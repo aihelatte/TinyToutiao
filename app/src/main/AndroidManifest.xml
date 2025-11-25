@@ -4,10 +4,6 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!--
-         注意 android:name=".TinyToutiaoApplication"
-         这告诉系统：启动 App 时，请使用我写的这个 Application 类
-    -->
     <application
         android:name=".TinyToutiaoApplication"
         android:allowBackup="true"
@@ -18,8 +14,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TinyToutiao"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
+        <!-- ... Activity 配置保持不变 ... -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -29,6 +27,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>

@@ -6,31 +6,36 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.tinytoutiao.data.model.db.ArticleEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface NewsDao {
 
-    /**
-     * 插入一组新闻
-     * OnConflictStrategy.REPLACE: 如果插入的新闻 URL 已经存在，就覆盖旧的
-     * 这保证了如果内容有更新，我们会显示最新的
-     */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(articles: List<ArticleEntity>)
 
-    /**
-     * 查询所有新闻
-     * 返回 PagingSource：这是专门给 Paging 3 库使用的对象
-     * 它可以自动帮我们处理分页读取（比如数据库有1万条，它一次只读20条给UI，省内存）
-     * ORDER BY createdAt DESC: 保证最新插入的新闻显示在最前面
-     */
-    @Query("SELECT * FROM articles")
+    @Query("SELECT * FROM articles ORDER BY createdAt DESC")
     fun getArticles(): PagingSource<Int, ArticleEntity>
 
-    /**
-     * 清空所有缓存
-     * 当用户下拉刷新时，我们需要先清空旧数据，再插入新数据
-     */
     @Query("DELETE FROM articles")
     suspend fun clearAll()
+
+    // --- 状态更新 ---
+
+    @Query("UPDATE articles SET isViewed = 1, viewedAt = :timestamp WHERE url = :url")
+    suspend fun markAsViewed(url: String, timestamp: Long = System.currentTimeMillis())
+
+    // 切换收藏状态 (如果原来是 1 改成 0，是 0 改成 1)
+    @Query("UPDATE articles SET isLiked = CASE WHEN isLiked = 1 THEN 0 ELSE 1 END WHERE url = :url")
+    suspend fun toggleLike(url: String)
+
+    // --- 🔥 核心升级：返回 Flow 实现实时响应 ---
+
+    // 获取浏览历史 (按阅读时间倒序)
+    @Query("SELECT * FROM articles WHERE isViewed = 1 ORDER BY viewedAt DESC")
+    fun getViewedArticles(): Flow<List<ArticleEntity>>
+
+    // 获取我的收藏
+    @Query("SELECT * FROM articles WHERE isLiked = 1 ORDER BY createdAt DESC")
+    fun getLikedArticles(): Flow<List<ArticleEntity>>
 }
