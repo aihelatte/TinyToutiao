@@ -13,43 +13,43 @@ import com.example.tinytoutiao.data.remote.RetrofitClient
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-/**
- * 仓库层 (Repository) - 单一数据源入口
- * 职责：
- * 1. 配置 Paging 3 的加载策略 (每页几条)。
- * 2. 组装 RemoteMediator (大脑) 和 PagingSource (数据库)。
- * 3. 将底层数据库实体 (Entity) 转换为 上层业务对象 (Domain Model)。
- */
 class NewsRepository(
     private val database: AppDatabase
 ) {
-    // 获取网络服务实例
     private val apiService = RetrofitClient.service
 
-    /**
-     * 获取新闻流
-     * 返回类型 Flow<PagingData<Article>>：
-     */
     @OptIn(ExperimentalPagingApi::class)
     fun getNewsStream(): Flow<PagingData<Article>> {
         return Pager(
-            // 1. 配置工厂：定义分页行为
-            config = PagingConfig(
-                pageSize = 10, // 每页加载 10 条数据
-                enablePlaceholders = false, // 不显示占位符 (还没加载出来时显示灰色方块)，我们简化处理设为 false
-                initialLoadSize = 10 // 第一次加载的数量
-            ),
-            // 2. 注入大脑：处理网络和本地的协调逻辑 (包含你的随机算法)
-            remoteMediator = NewsRemoteMediator(
-                apiService = apiService,
-                database = database
-            ),
-            // 3. 定义源头：数据真正从哪里来？从 Room 数据库来！
+            config = PagingConfig(pageSize = 10, enablePlaceholders = false),
+            remoteMediator = NewsRemoteMediator(apiService, database),
             pagingSourceFactory = { database.newsDao().getArticles() }
         ).flow.map { pagingData ->
-            // 4. 数据转换：Entity -> Domain Model
-            // 这一步让 ViewModel 拿到的数据是纯净的，不包含任何数据库实现细节
-            pagingData.map { entity -> entity.toDomain() }
+            pagingData.map { it.toDomain() }
+        }
+    }
+
+    suspend fun markAsViewed(url: String) {
+        database.newsDao().markAsViewed(url)
+    }
+
+    // --- 🔥 新增：收藏与历史逻辑 ---
+
+    suspend fun toggleLike(url: String) {
+        database.newsDao().toggleLike(url)
+    }
+
+    // 获取历史记录流 (Entity -> Domain)
+    fun getHistoryStream(): Flow<List<Article>> {
+        return database.newsDao().getViewedArticles().map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
+    // 获取收藏列表流
+    fun getFavoritesStream(): Flow<List<Article>> {
+        return database.newsDao().getLikedArticles().map { list ->
+            list.map { it.toDomain() }
         }
     }
 }
