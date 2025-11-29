@@ -12,7 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,13 +37,14 @@ import com.example.tinytoutiao.data.model.Article
 @Composable
 fun NewsItem(
     article: Article,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onMoreClick: () -> Unit = {} // 🔥 新增：更多操作回调
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() } // 点击回调
-            .padding(vertical = 8.dp)
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // 根据 itemType 分发到不同的子组件
         when (article.itemType) {
@@ -51,8 +55,8 @@ fun NewsItem(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 底部信息栏 (来源、时间)
-        NewsMetaInfo(article)
+        // 底部信息栏 (来源、时间、更多)
+        NewsMetaInfo(article, onMoreClick)
 
         Spacer(modifier = Modifier.height(8.dp))
         // 分割线
@@ -71,7 +75,6 @@ fun StandardNewsItem(article: Article) {
         Text(
             text = article.title,
             style = MaterialTheme.typography.titleMedium,
-            // 🔥 核心功能：已读变灰
             color = if (article.isViewed) Color.Gray else Color.Black,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,
@@ -151,24 +154,42 @@ fun TextOnlyNewsItem(article: Article) {
     }
 }
 
-// --- 底部元数据 (来源、时间) ---
+// --- 底部元数据 (来源、时间、更多) ---
 @Composable
-fun NewsMetaInfo(article: Article) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        // 来源
-        Text(
-            text = article.sourceName,
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.Gray,
-            fontSize = 10.sp
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        // 发布时间 (简单截取字符串演示)
-        Text(
-            text = article.publishedAt.take(10), // 只取日期部分 2023-01-01
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.Gray,
-            fontSize = 10.sp
+fun NewsMetaInfo(
+    article: Article,
+    onMoreClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween // 两端对齐
+    ) {
+        // 左侧：来源 + 时间
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = article.sourceName,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray,
+                fontSize = 10.sp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = article.publishedAt.take(10), // 只取日期部分
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray,
+                fontSize = 10.sp
+            )
+        }
+
+        // 右侧：三个点 (更多操作)
+        Icon(
+            imageVector = Icons.Default.MoreVert,
+            contentDescription = "More",
+            tint = Color.LightGray,
+            modifier = Modifier
+                .size(16.dp)
+                .clickable { onMoreClick() }
         )
     }
 }

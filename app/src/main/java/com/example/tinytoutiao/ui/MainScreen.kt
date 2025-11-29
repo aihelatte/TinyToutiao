@@ -15,10 +15,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+// 导入所有 Screen
+import com.example.tinytoutiao.ui.screens.channel.ChannelScreen
 import com.example.tinytoutiao.ui.screens.detail.NewsDetailScreen
 import com.example.tinytoutiao.ui.screens.home.NewsListScreen
-import com.example.tinytoutiao.ui.screens.profile.HistoryScreen // 🔥 导入 HistoryScreen
+import com.example.tinytoutiao.ui.screens.profile.FavoritesScreen
+import com.example.tinytoutiao.ui.screens.profile.HistoryScreen
 import com.example.tinytoutiao.ui.screens.profile.ProfileScreen
+import com.example.tinytoutiao.ui.screens.search.SearchScreen
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -36,7 +40,7 @@ fun MainScreen() {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
 
-            // 只有在主 Tab 页才显示底部导航，进入详情页或历史页隐藏
+            // 仅在主页面显示底部导航
             if (currentRoute in routes) {
                 NavigationBar(
                     containerColor = Color.White,
@@ -55,7 +59,9 @@ fun MainScreen() {
                             ),
                             onClick = {
                                 navController.navigate(route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -77,6 +83,12 @@ fun MainScreen() {
                     onNewsClick = { url ->
                         val encodedUrl = URLEncoder.encode(url, StandardCharsets.UTF_8.toString())
                         navController.navigate("detail/$encodedUrl")
+                    },
+                    onChannelManageClick = {
+                        navController.navigate("channel_manage")
+                    },
+                    onSearchClick = {
+                        navController.navigate("search")
                     }
                 )
             }
@@ -84,8 +96,8 @@ fun MainScreen() {
             // 2. 个人中心
             composable("profile") {
                 ProfileScreen(
-                    // 🔥 处理跳转到历史记录
-                    onHistoryClick = { navController.navigate("history") }
+                    onHistoryClick = { navController.navigate("history") },
+                    onFavoritesClick = { navController.navigate("favorites") }
                 )
             }
 
@@ -96,15 +108,46 @@ fun MainScreen() {
             ) { backStackEntry ->
                 val encodedUrl = backStackEntry.arguments?.getString("newsUrl") ?: ""
                 val decodedUrl = URLDecoder.decode(encodedUrl, StandardCharsets.UTF_8.toString())
-                NewsDetailScreen(url = decodedUrl, onBackClick = { navController.popBackStack() })
+                NewsDetailScreen(
+                    url = decodedUrl,
+                    onBackClick = { navController.popBackStack() }
+                )
             }
 
-            // 4. 🔥 历史记录页路由
+            // 4. 历史记录
             composable("history") {
                 HistoryScreen(
                     onBackClick = { navController.popBackStack() },
                     onNewsClick = { url ->
-                        // 历史记录里的新闻点击后，也跳去详情页
+                        val encodedUrl = URLEncoder.encode(url, StandardCharsets.UTF_8.toString())
+                        navController.navigate("detail/$encodedUrl")
+                    }
+                )
+            }
+
+            // 5. 频道管理
+            composable("channel_manage") {
+                ChannelScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            // 6. 搜索页
+            composable("search") {
+                SearchScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onNewsClick = { url ->
+                        val encodedUrl = URLEncoder.encode(url, StandardCharsets.UTF_8.toString())
+                        navController.navigate("detail/$encodedUrl")
+                    }
+                )
+            }
+
+            // 7. 我的收藏
+            composable("favorites") {
+                FavoritesScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onNewsClick = { url ->
                         val encodedUrl = URLEncoder.encode(url, StandardCharsets.UTF_8.toString())
                         navController.navigate("detail/$encodedUrl")
                     }

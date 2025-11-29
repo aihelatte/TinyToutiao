@@ -3,6 +3,7 @@ package com.example.tinytoutiao.di
 import android.content.Context
 import com.example.tinytoutiao.data.local.AppDatabase
 import com.example.tinytoutiao.data.repository.NewsRepository
+import com.example.tinytoutiao.data.repository.ChannelRepository
 
 /**
  * 依赖注入容器 (Dependency Injection Container)
@@ -20,5 +21,9 @@ class AppContainer(context: Context) {
     // 仓库依赖于数据库，所以我们把 database 传进去
     val newsRepository: NewsRepository by lazy {
         NewsRepository(database)
+    }
+
+    val channelRepository: ChannelRepository by lazy {
+        ChannelRepository(context)
     }
 }
