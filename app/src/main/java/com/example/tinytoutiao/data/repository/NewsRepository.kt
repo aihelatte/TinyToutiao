@@ -18,35 +18,53 @@ class NewsRepository(
 ) {
     private val apiService = RetrofitClient.service
 
+    // 1. 获取普通新闻流 (带频道)
     @OptIn(ExperimentalPagingApi::class)
-    fun getNewsStream(): Flow<PagingData<Article>> {
+    fun getNewsStream(category: String): Flow<PagingData<Article>> {
         return Pager(
-            config = PagingConfig(pageSize = 10, enablePlaceholders = false),
-            remoteMediator = NewsRemoteMediator(apiService, database),
+            config = PagingConfig(pageSize = 10, prefetchDistance = 3, enablePlaceholders = false),
+            remoteMediator = NewsRemoteMediator(apiService, database, category = category),
             pagingSourceFactory = { database.newsDao().getArticles() }
         ).flow.map { pagingData ->
             pagingData.map { it.toDomain() }
         }
     }
 
+    // 2. 获取搜索新闻流
+    @OptIn(ExperimentalPagingApi::class)
+    fun searchNewsStream(query: String): Flow<PagingData<Article>> {
+        return Pager(
+            config = PagingConfig(pageSize = 10, prefetchDistance = 3, enablePlaceholders = false),
+            remoteMediator = NewsRemoteMediator(apiService, database, query = query),
+            pagingSourceFactory = { database.newsDao().getArticles() }
+        ).flow.map { pagingData ->
+            pagingData.map { it.toDomain() }
+        }
+    }
+
+    // 3. 获取单条新闻 (用于详情页观察点赞状态)
+    fun getArticleStream(url: String): Flow<Article?> {
+        return database.newsDao().getArticle(url).map { it?.toDomain() }
+    }
+
+    // 4. 操作：标记已读
     suspend fun markAsViewed(url: String) {
         database.newsDao().markAsViewed(url)
     }
 
-    // --- 🔥 新增：收藏与历史逻辑 ---
-
+    // 5. 操作：切换点赞
     suspend fun toggleLike(url: String) {
         database.newsDao().toggleLike(url)
     }
 
-    // 获取历史记录流 (Entity -> Domain)
+    // 6. 获取历史记录
     fun getHistoryStream(): Flow<List<Article>> {
         return database.newsDao().getViewedArticles().map { list ->
             list.map { it.toDomain() }
         }
     }
 
-    // 获取收藏列表流
+    // 7. 获取收藏列表
     fun getFavoritesStream(): Flow<List<Article>> {
         return database.newsDao().getLikedArticles().map { list ->
             list.map { it.toDomain() }

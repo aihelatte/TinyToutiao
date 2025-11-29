@@ -16,7 +16,7 @@ import com.example.tinytoutiao.data.model.db.ArticleEntity
  */
 @Database(
     entities = [ArticleEntity::class],
-    version = 2, // ⚠️ 注意版本号升级
+    version = 3, // ⚠️ 注意版本号升级
     exportSchema = false
 )
 @TypeConverters(StringListConverter::class) // 注册我们刚写的转换器
