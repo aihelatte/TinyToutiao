@@ -129,8 +129,8 @@ fun ChannelItem(
     isMyChannel: Boolean,
     onClick: () -> Unit
 ) {
-    // 推荐(general) 频道特殊处理：灰色背景，不可点击
-    val isFixed = channel.code == "general"
+    // 推荐(general) 热榜(hot)频道特殊处理：灰色背景，不可点击
+    val isFixed = channel.code == "general" || channel.code == "hot"
 
     Surface(
         onClick = onClick,

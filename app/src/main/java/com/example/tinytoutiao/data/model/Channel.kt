@@ -14,6 +14,7 @@ data class Channel(
     companion object {
         val ALL_CHANNELS = listOf(
             Channel("general", "推荐"), // 默认综合
+            Channel("hot", "热榜"),
             Channel("world", "国际"),
             Channel("nation", "国内"), // 对应 GNews 的 nation
             Channel("business", "财经"),
