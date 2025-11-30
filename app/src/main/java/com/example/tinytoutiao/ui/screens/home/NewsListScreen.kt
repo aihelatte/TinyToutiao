@@ -10,11 +10,14 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,19 +36,36 @@ fun NewsListScreen(
     onChannelManageClick: () -> Unit,
     onSearchClick: () -> Unit
 ) {
-    // 数据流
+    // 1. 数据流
     val newsItems = viewModel.newsPagingFlow.collectAsLazyPagingItems()
     val channels by viewModel.myChannels.collectAsState()
 
-    // Tab 状态
+    // 2. 状态管理
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
-    // 🔥 抽屉状态
+    // 底部抽屉状态
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
-    // 🔥 记录当前操作的是哪条新闻 (备用，虽然只弹Toast)
+    // 记录当前操作的新闻URL
     var selectedArticleUrl by remember { mutableStateOf("") }
+
+    // 🔥 3. 下拉刷新状态管理
+    val pullRefreshState = rememberPullToRefreshState()
+
+    // 逻辑：当 UI 变为刷新态时，触发 Paging 刷新
+    if (pullRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            newsItems.refresh()
+        }
+    }
+
+    // 逻辑：当 Paging 加载结束时，结束下拉刷新动画
+    LaunchedEffect(newsItems.loadState.refresh) {
+        if (newsItems.loadState.refresh !is LoadState.Loading) {
+            pullRefreshState.endRefresh()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -67,61 +87,76 @@ fun NewsListScreen(
             }
         }
     ) { innerPadding ->
-        LazyColumn(
+        // 🔥 外层包裹 Box 并绑定 nestedScroll，实现下拉手势
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 16.dp)
+                .padding(innerPadding)
+                .nestedScroll(pullRefreshState.nestedScrollConnection)
         ) {
-            items(
-                count = newsItems.itemCount,
-                key = { index ->
-                    val item = newsItems.peek(index)
-                    if (item != null) "${item.url}-$index" else index
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(
+                    count = newsItems.itemCount,
+                    // 唯一 Key：URL + 索引 (防止重复数据崩溃)
+                    key = { index ->
+                        val item = newsItems.peek(index)
+                        if (item != null) "${item.url}-$index" else index
+                    }
+                ) { index ->
+                    val article = newsItems[index]
+                    if (article != null) {
+                        NewsItem(
+                            article = article,
+                            onClick = {
+                                viewModel.onNewsClicked(article.url)
+                                onNewsClick(article.url)
+                            },
+                            // 点击三个点 -> 打开抽屉
+                            onMoreClick = {
+                                selectedArticleUrl = article.url
+                                showBottomSheet = true
+                            }
+                        )
+                    }
                 }
-            ) { index ->
-                val article = newsItems[index]
-                if (article != null) {
-                    NewsItem(
-                        article = article,
-                        onClick = {
-                            viewModel.onNewsClicked(article.url)
-                            onNewsClick(article.url)
-                        },
-                        // 🔥 绑定三个点事件
-                        onMoreClick = {
-                            selectedArticleUrl = article.url
-                            showBottomSheet = true
-                        }
+
+                // 底部加载更多状态
+                item {
+                    when (newsItems.loadState.append) {
+                        is LoadState.Loading -> LoadingItem()
+                        is LoadState.Error -> ErrorItem("加载失败") { newsItems.retry() }
+                        else -> {}
+                    }
+                }
+            }
+
+            // 🔥 下拉刷新指示器 (放在最上层)
+            PullToRefreshContainer(
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+
+            // 底部抽屉
+            if (showBottomSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showBottomSheet = false },
+                    sheetState = sheetState,
+                    containerColor = Color.White
+                ) {
+                    ActionBottomSheetContent(
+                        onDismiss = { showBottomSheet = false }
                     )
                 }
-            }
-
-            item {
-                when (newsItems.loadState.append) {
-                    is LoadState.Loading -> LoadingItem()
-                    is LoadState.Error -> ErrorItem("加载失败") { newsItems.retry() }
-                    else -> {}
-                }
-            }
-        }
-
-        // 🔥 底部抽屉
-        if (showBottomSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showBottomSheet = false },
-                sheetState = sheetState,
-                containerColor = Color.White
-            ) {
-                ActionBottomSheetContent(
-                    onDismiss = { showBottomSheet = false }
-                )
             }
         }
     }
 }
 
-// --- 以下组件保持原有逻辑不变 ---
+// --- 以下组件保持不变 ---
+
 @Composable
 fun HomeSearchBar(onClick: () -> Unit) {
     Row(
@@ -216,14 +251,25 @@ fun HomeChannelTabs(
 
 @Composable
 fun LoadingItem() {
-    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
         CircularProgressIndicator(strokeWidth = 2.dp, color = Color.Gray)
     }
 }
 
 @Composable
 fun ErrorItem(msg: String, onRetry: () -> Unit) {
-    Box(modifier = Modifier.fillMaxWidth().clickable { onRetry() }.padding(16.dp), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onRetry() }
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
         Text(msg, color = Color.Red)
     }
 }

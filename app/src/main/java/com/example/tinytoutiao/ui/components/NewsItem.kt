@@ -1,16 +1,8 @@
 package com.example.tinytoutiao.ui.components
 
+import androidx.compose.foundation.background // 🔥 修复报错的关键导入
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -24,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,7 +32,7 @@ import com.example.tinytoutiao.data.model.Article
 fun NewsItem(
     article: Article,
     onClick: () -> Unit,
-    onMoreClick: () -> Unit = {} // 🔥 新增：更多操作回调
+    onMoreClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -46,21 +40,81 @@ fun NewsItem(
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        // 根据 itemType 分发到不同的子组件
+        // 🔥 分发逻辑：新增 itemType == 3 (热榜模式)
         when (article.itemType) {
-            1 -> ThreeImagesNewsItem(article) // 三图模式
-            2 -> TextOnlyNewsItem(article)    // 纯文模式
-            else -> StandardNewsItem(article) // 默认标准模式
+            1 -> ThreeImagesNewsItem(article) // 三图
+            2 -> TextOnlyNewsItem(article)    // 纯文
+            3 -> HotRankItem(article)         // 🔥 热榜
+            else -> StandardNewsItem(article) // 默认标准
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        // 热榜模式不需要常规的底部信息栏
+        if (article.itemType != 3) {
+            Spacer(modifier = Modifier.height(8.dp))
+            NewsMetaInfo(article, onMoreClick)
+            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp)
+        } else {
+            // 热榜自带分割线
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 0.5.dp)
+        }
+    }
+}
 
-        // 底部信息栏 (来源、时间、更多)
-        NewsMetaInfo(article, onMoreClick)
+// --- 🔥 新增：热榜条目组件 ---
+@Composable
+fun HotRankItem(article: Article) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 提取标题里的排名数字 (格式: "1. 标题")
+        // 如果提取失败，默认为 ""
+        val rank = article.title.substringBefore(".", missingDelimiterValue = "")
+        val isTop3 = rank in listOf("1", "2", "3")
 
-        Spacer(modifier = Modifier.height(8.dp))
-        // 分割线
-        HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp)
+        // 排名数字
+        Text(
+            text = rank,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = if (isTop3) Color.Red else Color.Gray,
+            modifier = Modifier.width(32.dp),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // 标题和热度
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = article.title.substringAfter(". "), // 去掉前缀
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            // 显示热度值
+            Text(
+                text = "热度 ${article.description} 万",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+        }
+
+        // 右侧 "热" 标签 (仅前三名)
+        if (isTop3) {
+            Text(
+                text = "热",
+                color = Color.White,
+                fontSize = 10.sp,
+                modifier = Modifier
+                    .background(Color(0xFFF44336), RoundedCornerShape(2.dp)) // 🔥 这里就是之前报错的地方
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
+            )
+        }
     }
 }
 
@@ -71,7 +125,6 @@ fun StandardNewsItem(article: Article) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // 左侧标题
         Text(
             text = article.title,
             style = MaterialTheme.typography.titleMedium,
@@ -81,7 +134,6 @@ fun StandardNewsItem(article: Article) {
             modifier = Modifier.weight(1f).padding(end = 8.dp)
         )
 
-        // 右侧图片 (如果 URL 不为空)
         if (article.imageUrl.isNotEmpty()) {
             AsyncImage(
                 model = article.imageUrl,
@@ -99,7 +151,6 @@ fun StandardNewsItem(article: Article) {
 @Composable
 fun ThreeImagesNewsItem(article: Article) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        // 顶部标题
         Text(
             text = article.title,
             style = MaterialTheme.typography.titleMedium,
@@ -109,20 +160,18 @@ fun ThreeImagesNewsItem(article: Article) {
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 三张图片并排
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // 遍历图片列表，最多取前3张
             article.coverImages.take(3).forEach { imgUrl ->
                 AsyncImage(
                     model = imgUrl,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .weight(1f) // 三等分宽度
-                        .aspectRatio(1.5f) // 固定宽高比 3:2
+                        .weight(1f)
+                        .aspectRatio(1.5f)
                         .clip(RoundedCornerShape(4.dp))
                 )
             }
@@ -154,7 +203,7 @@ fun TextOnlyNewsItem(article: Article) {
     }
 }
 
-// --- 底部元数据 (来源、时间、更多) ---
+// --- 底部元数据 ---
 @Composable
 fun NewsMetaInfo(
     article: Article,
@@ -163,9 +212,8 @@ fun NewsMetaInfo(
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween // 两端对齐
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // 左侧：来源 + 时间
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = article.sourceName,
@@ -175,14 +223,13 @@ fun NewsMetaInfo(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = article.publishedAt.take(10), // 只取日期部分
+                text = article.publishedAt.take(10),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray,
                 fontSize = 10.sp
             )
         }
 
-        // 右侧：三个点 (更多操作)
         Icon(
             imageVector = Icons.Default.MoreVert,
             contentDescription = "More",
