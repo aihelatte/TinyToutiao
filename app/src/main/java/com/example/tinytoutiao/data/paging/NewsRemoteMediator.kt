@@ -67,11 +67,15 @@ class NewsRemoteMediator(
 
             // 4. 存入数据库
             database.withTransaction {
+                // 🚑 【抢救行动开始】
+                // 在清空数据库之前，先由 NewsDao 把所有“红心”新闻的 URL 救出来！
+                // (注意：这里我们查全表，对于 APPEND 操作，虽然不 clearAll，但也能防止重复数据覆盖掉点赞状态)
+                val likedUrls = database.newsDao().getLikedArticleUrls()
+
                 if (loadType == LoadType.REFRESH) {
                     database.newsDao().clearAll()
 
-                    // 🔥 伪乱序优化：如果是普通频道下拉刷新，打乱顺序模拟“新内容”
-                    // 热榜需要保持排名顺序，所以不打乱
+                    // 伪乱序优化
                     if (category != "hot") {
                         articles = articles.shuffled()
                     }
@@ -82,12 +86,13 @@ class NewsRemoteMediator(
                 // 转换 Entity 并插入
                 val entities = articles.mapIndexedNotNull { index, dto ->
                     val entity = dto.toEntity()
-                    // 复制对象，修正时间和类型
                     entity?.copy(
-                        // 使用 "基准时间 + 索引" 保证绝对顺序，防止列表跳动
                         createdAt = baseTime + index,
-                        // 🔥 核心：如果是热榜，强制 itemType = 3 (纯文榜单样式)
-                        itemType = if (category == "hot") 3 else entity.itemType
+                        itemType = if (category == "hot") 3 else entity.itemType,
+
+                        // 💉 【注入恢复剂】
+                        // 如果这条新闻的 URL 在我们的“抢救名单”里，强行把 isLiked 设为 true
+                        isLiked = likedUrls.contains(dto.url)
                     )
                 }
                 database.newsDao().insertAll(entities)

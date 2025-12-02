@@ -24,6 +24,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tinytoutiao.data.model.Article
 import com.example.tinytoutiao.ui.components.ActionBottomSheetContent
 import com.example.tinytoutiao.ui.screens.home.NewsViewModel
+import com.example.tinytoutiao.ui.components.LottieLikeButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,14 +137,10 @@ fun DetailBottomBar(
 
             Spacer(modifier = Modifier.width(20.dp))
 
-            IconButton(onClick = onLikeClick) {
-                Icon(
-                    imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = "Like",
-                    tint = if (isLiked) Color.Red else Color.Black,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
+            LottieLikeButton(
+                isLiked = isLiked,
+                onClick = onLikeClick
+            )
         }
     }
 }
