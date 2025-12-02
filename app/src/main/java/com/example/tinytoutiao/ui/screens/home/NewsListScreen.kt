@@ -26,7 +26,10 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.tinytoutiao.data.model.Channel
 import com.example.tinytoutiao.ui.components.ActionBottomSheetContent
+import com.example.tinytoutiao.ui.components.LottieLoadingItem
+import com.example.tinytoutiao.ui.components.LottieRefreshHeader
 import com.example.tinytoutiao.ui.components.NewsItem
+import com.example.tinytoutiao.ui.components.NewsListSkeleton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +45,17 @@ fun NewsListScreen(
 
     // 2. 状态管理
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+
+    // 监听 channels 列表的变化
+    LaunchedEffect(channels) {
+        // 如果列表不为空，且当前选中的索引已经超出了列表长度
+        // (比如原来有5个，选中第4个；删了2个剩3个，第4个就不存在了)
+        if (channels.isNotEmpty() && selectedTabIndex >= channels.size) {
+            // 强制归位到第一个频道 (推荐)
+            selectedTabIndex = 0
+            viewModel.onCategoryChange(channels[0].code)
+        }
+    }
 
     // 底部抽屉状态
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -94,52 +108,56 @@ fun NewsListScreen(
                 .padding(innerPadding)
                 .nestedScroll(pullRefreshState.nestedScrollConnection)
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(
-                    count = newsItems.itemCount,
-                    // 唯一 Key：URL + 索引 (防止重复数据崩溃)
-                    key = { index ->
-                        val item = newsItems.peek(index)
-                        if (item != null) "${item.url}-$index" else index
+            // --- A. 列表内容区 (底层) ---
+            if (newsItems.loadState.refresh is LoadState.Loading && !pullRefreshState.isRefreshing) {
+                NewsListSkeleton()
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(
+                        count = newsItems.itemCount,
+                        key = { index ->
+                            val item = newsItems.peek(index)
+                            if (item != null) "${item.url}-$index" else index
+                        }
+                    ) { index ->
+                        val article = newsItems[index]
+                        if (article != null) {
+                            NewsItem(
+                                article = article,
+                                onClick = {
+                                    viewModel.onNewsClicked(article.url)
+                                    onNewsClick(article.url)
+                                },
+                                onMoreClick = {
+                                    selectedArticleUrl = article.url
+                                    showBottomSheet = true
+                                }
+                            )
+                        }
                     }
-                ) { index ->
-                    val article = newsItems[index]
-                    if (article != null) {
-                        NewsItem(
-                            article = article,
-                            onClick = {
-                                viewModel.onNewsClicked(article.url)
-                                onNewsClick(article.url)
-                            },
-                            // 点击三个点 -> 打开抽屉
-                            onMoreClick = {
-                                selectedArticleUrl = article.url
-                                showBottomSheet = true
-                            }
-                        )
-                    }
-                }
 
-                // 底部加载更多状态
-                item {
-                    when (newsItems.loadState.append) {
-                        is LoadState.Loading -> LoadingItem()
-                        is LoadState.Error -> ErrorItem("加载失败") { newsItems.retry() }
-                        else -> {}
+                    // 🔥 底部加载条：确保这里调用的是 Lottie 组件
+                    item {
+                        when (newsItems.loadState.append) {
+                            is LoadState.Loading -> LottieLoadingItem() // 👈 确认这里用了 Lottie
+                            is LoadState.Error -> ErrorItem("加载失败") { newsItems.retry() }
+                            else -> {}
+                        }
                     }
                 }
             }
 
-            // 🔥 下拉刷新指示器 (放在最上层)
-            PullToRefreshContainer(
+            // --- B. 下拉刷新头 (顶层) ---
+            // 🔥 核心修复：把它放在 LazyColumn 后面，确保不被遮挡
+            LottieRefreshHeader(
                 state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter)
+                isRefreshing = pullRefreshState.isRefreshing
             )
 
-            // 底部抽屉
+            // --- C. 底部抽屉 (最顶层) ---
             if (showBottomSheet) {
                 ModalBottomSheet(
                     onDismissRequest = { showBottomSheet = false },

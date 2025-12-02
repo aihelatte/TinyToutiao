@@ -39,4 +39,7 @@ interface NewsDao {
 
     @Query("SELECT * FROM articles WHERE url = :url")
     fun getArticle(url: String): Flow<ArticleEntity?>
+
+    @Query("SELECT url FROM articles WHERE isLiked = 1")
+    suspend fun getLikedArticleUrls(): List<String>
 }
