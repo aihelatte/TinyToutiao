@@ -8,6 +8,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -27,6 +29,9 @@ import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+// 定义全局头条红颜色
+val ToutiaoRed = Color(0xFFFF3D3C)
+
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
@@ -44,18 +49,28 @@ fun MainScreen() {
             if (currentRoute in routes) {
                 NavigationBar(
                     containerColor = Color.White,
-                    contentColor = MaterialTheme.colorScheme.primary
+                    contentColor = ToutiaoRed // 默认内容色
                 ) {
                     items.forEachIndexed { index, item ->
                         val route = routes[index]
+                        val isSelected = currentRoute == route
+
                         NavigationBarItem(
                             icon = { Icon(icons[index], contentDescription = item) },
-                            label = { Text(item) },
-                            selected = currentRoute == route,
+                            label = {
+                                Text(
+                                    text = item,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 12.sp // 稍微调大一点 (默认是 11sp 左右)
+                                )
+                            },
+                            selected = isSelected,
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = Color.Transparent
+                                selectedIconColor = ToutiaoRed,
+                                selectedTextColor = ToutiaoRed,
+                                indicatorColor = Color.Transparent, // 去掉选中时的胶囊背景
+                                unselectedIconColor = Color.Gray,
+                                unselectedTextColor = Color.Gray
                             ),
                             onClick = {
                                 navController.navigate(route) {

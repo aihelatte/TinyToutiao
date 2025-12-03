@@ -27,7 +27,7 @@ data class Article(
 
 /**
  * 网络数据(DTO) -> 数据库实体(Entity)
- * 🔥 核心逻辑：在这里进行数据的"伪装"和"随机化"
+ * 核心逻辑：在这里进行数据的"伪装"和"随机化"
  */
 fun ArticleDto.toEntity(): ArticleEntity? {
     // 过滤脏数据
@@ -44,8 +44,7 @@ fun ArticleDto.toEntity(): ArticleEntity? {
     }
 
     // 2. 构造三图数据
-    // 因为 GNews 只有一张图，如果是三图模式，我们把这一张图复制 3 份来模拟
-    // (或者你可以稍微改改 URL 参数来模拟不同图片，但这取决于图片服务)
+    // 因为 GNews 只有一张图，如果是三图模式，把这一张图复制 3 份来模拟
     val imageList = if (randomType == 1 && !imageUrl.isNullOrEmpty()) {
         listOf(imageUrl, imageUrl, imageUrl)
     } else {
@@ -65,7 +64,7 @@ fun ArticleDto.toEntity(): ArticleEntity? {
         // 赋值新字段
         itemType = randomType,
         coverImages = imageList,
-        isViewed = false, // 刚拉下来的新闻肯定没读过
+        isViewed = false,
         isLiked = false,
         viewedAt = null
     )

@@ -31,7 +31,7 @@ fun FavoritesScreen(
     onBackClick: () -> Unit,
     onNewsClick: (String) -> Unit
 ) {
-    // 🔥 核心区别：这里收集的是 favoritesFlow (收藏列表)
+    // 收集的是 favoritesFlow (收藏列表)
     val favoriteList by viewModel.favoritesFlow.collectAsState()
 
     Scaffold(

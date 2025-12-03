@@ -141,10 +141,9 @@ fun ChannelItem(
     ) {
         Box(contentAlignment = Alignment.Center) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // 🔥 核心修改：如果是"我的频道"且不是"推荐"(general)，显示减号/叉号
                 if (isMyChannel && !isFixed) {
                     Icon(
-                        imageVector = Icons.Default.Close, // 或者用 Remove 如果有的话，Close 也可以表示删除
+                        imageVector = Icons.Default.Close,
                         contentDescription = "Remove",
                         modifier = Modifier.size(12.dp),
                         tint = Color.LightGray

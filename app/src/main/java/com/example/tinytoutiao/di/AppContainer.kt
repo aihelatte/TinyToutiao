@@ -18,7 +18,7 @@ class AppContainer(context: Context) {
     }
 
     // 2. 初始化仓库 (单例)
-    // 仓库依赖于数据库，所以我们把 database 传进去
+    // 仓库依赖于数据库，所以把 database 传进去
     val newsRepository: NewsRepository by lazy {
         NewsRepository(database)
     }
