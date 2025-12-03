@@ -38,7 +38,7 @@ fun NewsDetailScreen(
 
     var webView: WebView? by remember { mutableStateOf(null) }
 
-    // 🔥 抽屉状态
+    // 抽屉状态
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
@@ -90,7 +90,7 @@ fun NewsDetailScreen(
             update = { webView = it }
         )
 
-        // 🔥 底部抽屉
+        // 底部抽屉
         if (showBottomSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showBottomSheet = false },

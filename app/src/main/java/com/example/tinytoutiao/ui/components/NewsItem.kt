@@ -1,6 +1,6 @@
 package com.example.tinytoutiao.ui.components
 
-import androidx.compose.foundation.background // 🔥 修复报错的关键导入
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,7 +44,7 @@ fun NewsItem(
         when (article.itemType) {
             1 -> ThreeImagesNewsItem(article) // 三图
             2 -> TextOnlyNewsItem(article)    // 纯文
-            3 -> HotRankItem(article)         // 🔥 热榜
+            3 -> HotRankItem(article)         // 热榜
             else -> StandardNewsItem(article) // 默认标准
         }
 
@@ -62,7 +62,7 @@ fun NewsItem(
     }
 }
 
-// --- 🔥 新增：热榜条目组件 ---
+// --- 热榜条目组件 ---
 @Composable
 fun HotRankItem(article: Article) {
     Row(
@@ -111,7 +111,7 @@ fun HotRankItem(article: Article) {
                 color = Color.White,
                 fontSize = 10.sp,
                 modifier = Modifier
-                    .background(Color(0xFFF44336), RoundedCornerShape(2.dp)) // 🔥 这里就是之前报错的地方
+                    .background(Color(0xFFF44336), RoundedCornerShape(2.dp))
                     .padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }

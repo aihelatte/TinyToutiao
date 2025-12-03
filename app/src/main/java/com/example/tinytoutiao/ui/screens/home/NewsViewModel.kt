@@ -29,7 +29,7 @@ import com.example.tinytoutiao.data.model.Article
  */
 class NewsViewModel(
     private val newsRepository: NewsRepository,
-    private val channelRepository: ChannelRepository // 🔥 新增：频道仓库
+    private val channelRepository: ChannelRepository
 ) : ViewModel() {
 
     // 1. 真实的频道列表 (供 UI 显示 Tab)
@@ -42,12 +42,11 @@ class NewsViewModel(
     // 2. 当前选中的频道代码 (默认为 "general")
     private val _selectedCategory = MutableStateFlow("general")
 
-    // 3. 🔥 动态 Paging 数据流
+    // 3. 动态 Paging 数据流
     // 当 _selectedCategory 变化时，flatMapLatest 会取消旧的流，创建新的流
     // 这意味着：切换频道 -> 数据库清空 -> 加载新频道数据
     @OptIn(ExperimentalCoroutinesApi::class)
     val newsPagingFlow = _selectedCategory.flatMapLatest { category ->
-        // ⚠️ 注意：这里需要 NewsRepository 支持接收 category 参数
         newsRepository.getNewsStream(category)
     }.cachedIn(viewModelScope)
 
@@ -84,7 +83,7 @@ class NewsViewModel(
                 val app = (this[APPLICATION_KEY] as TinyToutiaoApplication)
                 NewsViewModel(
                     app.container.newsRepository,
-                    app.container.channelRepository // 🔥 注入 ChannelRepository
+                    app.container.channelRepository
                 )
             }
         }

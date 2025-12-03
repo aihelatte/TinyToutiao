@@ -14,10 +14,6 @@ data class NewsResponse(
     @SerializedName("articles") val articles: List<ArticleDto>
 )
 
-/**
- * 对应 JSON 中的单条新闻对象 (Data Transfer Object)
- * 使用 @SerializedName 确保字段名与 JSON 严格一致
- */
 data class ArticleDto(
     @SerializedName("title") val title: String?,
     @SerializedName("description") val description: String?,

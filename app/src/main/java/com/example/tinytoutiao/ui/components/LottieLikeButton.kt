@@ -39,7 +39,7 @@ fun LottieLikeButton(
             ) { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        // 🔥 核心修复逻辑：混合显示
+        // 混合显示
         if (isLiked) {
             // 状态1：已点赞 -> 显示 Lottie 动画 (红色)
             LottieAnimation(

@@ -101,7 +101,7 @@ fun Modifier.shimmerEffect(): Modifier {
 
     val shimmerColors = listOf(
         Color.LightGray.copy(alpha = 0.6f),
-        Color.LightGray.copy(alpha = 0.2f), // 中间淡一点，模拟反光
+        Color.LightGray.copy(alpha = 0.2f),
         Color.LightGray.copy(alpha = 0.6f),
     )
 

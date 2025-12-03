@@ -9,15 +9,12 @@ import androidx.room.PrimaryKey
  */
 @Entity(tableName = "articles")
 data class ArticleEntity(
-    // 🔥 修改 1: 启用自增 ID 作为主键
     // 这样同一条新闻 URL 可以被多次存入数据库（实现无限列表）
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
 
-    // 🔥 修改 2: url 变成普通字段
     val url: String,
 
-    // ... 其他字段保持不变 ...
     val title: String,
     val description: String?,
     val content: String?,

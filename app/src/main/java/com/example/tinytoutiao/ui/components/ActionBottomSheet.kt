@@ -93,7 +93,6 @@ fun ActionBottomSheetContent(
 
 // --- 分享部分 ---
 
-// 🔥 修改：删除了 color 属性，因为 Image 不需要手动染色
 data class ShareItem(val name: String, val iconResId: Int)
 
 @Composable

@@ -35,9 +35,6 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "tinytoutiao_db"
                 )
-                    // ⚠️ 开发阶段神器：
-                    // 如果检测到数据库结构变了(版本升级)，直接把旧数据库删了重建。
-                    // 这样我们就不用写复杂的迁移 SQL 了。
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

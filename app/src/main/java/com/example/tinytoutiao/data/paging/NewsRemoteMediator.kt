@@ -41,7 +41,7 @@ class NewsRemoteMediator(
 
             // 2. 获取数据 (分流处理：热榜走纯 Mock，其他走 网络 -> Mock 兜底)
             var articles = if (category == "hot") {
-                // 🔥 热榜特殊通道：直接生成纯文字榜单，不请求网络
+                // 热榜特殊通道：直接生成纯文字榜单，不请求网络
                 generateHotRankData(page)
             } else {
                 // 普通频道/搜索：尝试请求网络
@@ -67,8 +67,7 @@ class NewsRemoteMediator(
 
             // 4. 存入数据库
             database.withTransaction {
-                // 🚑 【抢救行动开始】
-                // 在清空数据库之前，先由 NewsDao 把所有“红心”新闻的 URL 救出来！
+                // 在清空数据库之前，先由 NewsDao 把所有“红心”新闻的 URL 取出来
                 // (注意：这里我们查全表，对于 APPEND 操作，虽然不 clearAll，但也能防止重复数据覆盖掉点赞状态)
                 val likedUrls = database.newsDao().getLikedArticleUrls()
 
@@ -90,8 +89,7 @@ class NewsRemoteMediator(
                         createdAt = baseTime + index,
                         itemType = if (category == "hot") 3 else entity.itemType,
 
-                        // 💉 【注入恢复剂】
-                        // 如果这条新闻的 URL 在我们的“抢救名单”里，强行把 isLiked 设为 true
+                        // 如果这条新闻的 URL 在名单里，强行把 isLiked 设为 true
                         isLiked = likedUrls.contains(dto.url)
                     )
                 }
@@ -108,7 +106,7 @@ class NewsRemoteMediator(
         }
     }
 
-    // --- 🛠️ 1. 普通 Mock 生成器 (带图，随机性强) ---
+    // --- 1. 普通 Mock 生成器 (带图，随机性强) ---
     private fun generateMockData(page: Int, category: String, query: String?): List<ArticleDto> {
         val mockList = mutableListOf<ArticleDto>()
 
@@ -142,7 +140,7 @@ class NewsRemoteMediator(
         return mockList
     }
 
-    // --- 🛠️ 2. 热榜 Mock 生成器 (纯文字，固定格式) ---
+    // ---2. 热榜 Mock 生成器 (纯文字，固定格式) ---
     private fun generateHotRankData(page: Int): List<ArticleDto> {
         val mockList = mutableListOf<ArticleDto>()
         val startRank = (page - 1) * 10 + 1

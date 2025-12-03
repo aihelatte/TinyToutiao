@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,8 +24,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.tinytoutiao.data.model.Channel
+import com.example.tinytoutiao.ui.ToutiaoRed
 import com.example.tinytoutiao.ui.components.ActionBottomSheetContent
-import com.example.tinytoutiao.ui.components.LottieLoadingItem
 import com.example.tinytoutiao.ui.components.LottieRefreshHeader
 import com.example.tinytoutiao.ui.components.NewsItem
 import com.example.tinytoutiao.ui.components.NewsListSkeleton
@@ -39,42 +38,26 @@ fun NewsListScreen(
     onChannelManageClick: () -> Unit,
     onSearchClick: () -> Unit
 ) {
-    // 1. 数据流
     val newsItems = viewModel.newsPagingFlow.collectAsLazyPagingItems()
     val channels by viewModel.myChannels.collectAsState()
 
-    // 2. 状态管理
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-
-    // 监听 channels 列表的变化
     LaunchedEffect(channels) {
-        // 如果列表不为空，且当前选中的索引已经超出了列表长度
-        // (比如原来有5个，选中第4个；删了2个剩3个，第4个就不存在了)
-        if (channels.isNotEmpty() && selectedTabIndex >= channels.size) {
-            // 强制归位到第一个频道 (推荐)
+        if (selectedTabIndex >= channels.size && channels.isNotEmpty()) {
             selectedTabIndex = 0
             viewModel.onCategoryChange(channels[0].code)
         }
     }
 
-    // 底部抽屉状态
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-
-    // 记录当前操作的新闻URL
     var selectedArticleUrl by remember { mutableStateOf("") }
 
-    // 🔥 3. 下拉刷新状态管理
     val pullRefreshState = rememberPullToRefreshState()
 
-    // 逻辑：当 UI 变为刷新态时，触发 Paging 刷新
     if (pullRefreshState.isRefreshing) {
-        LaunchedEffect(true) {
-            newsItems.refresh()
-        }
+        LaunchedEffect(true) { newsItems.refresh() }
     }
-
-    // 逻辑：当 Paging 加载结束时，结束下拉刷新动画
     LaunchedEffect(newsItems.loadState.refresh) {
         if (newsItems.loadState.refresh !is LoadState.Loading) {
             pullRefreshState.endRefresh()
@@ -101,14 +84,13 @@ fun NewsListScreen(
             }
         }
     ) { innerPadding ->
-        // 🔥 外层包裹 Box 并绑定 nestedScroll，实现下拉手势
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .nestedScroll(pullRefreshState.nestedScrollConnection)
         ) {
-            // --- A. 列表内容区 (底层) ---
+            // 列表内容
             if (newsItems.loadState.refresh is LoadState.Loading && !pullRefreshState.isRefreshing) {
                 NewsListSkeleton()
             } else {
@@ -138,11 +120,10 @@ fun NewsListScreen(
                             )
                         }
                     }
-
-                    // 🔥 底部加载条：确保这里调用的是 Lottie 组件
+                    // 底部加载更多
                     item {
                         when (newsItems.loadState.append) {
-                            is LoadState.Loading -> LottieLoadingItem() // 👈 确认这里用了 Lottie
+                            is LoadState.Loading -> com.example.tinytoutiao.ui.components.LottieLoadingItem()
                             is LoadState.Error -> ErrorItem("加载失败") { newsItems.retry() }
                             else -> {}
                         }
@@ -150,14 +131,12 @@ fun NewsListScreen(
                 }
             }
 
-            // --- B. 下拉刷新头 (顶层) ---
-            // 🔥 核心修复：把它放在 LazyColumn 后面，确保不被遮挡
+            // 下拉刷新头
             LottieRefreshHeader(
                 state = pullRefreshState,
                 isRefreshing = pullRefreshState.isRefreshing
             )
 
-            // --- C. 底部抽屉 (最顶层) ---
             if (showBottomSheet) {
                 ModalBottomSheet(
                     onDismissRequest = { showBottomSheet = false },
@@ -173,21 +152,19 @@ fun NewsListScreen(
     }
 }
 
-// --- 以下组件保持不变 ---
-
 @Composable
 fun HomeSearchBar(onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .background(MaterialTheme.colorScheme.primary)
+            .background(ToutiaoRed)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .weight(1f)
+                .weight(1f) // 占满剩余空间
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color.White)
@@ -206,8 +183,6 @@ fun HomeSearchBar(onClick: () -> Unit) {
                 Text("搜你感兴趣的内容...", color = Color.Gray, fontSize = 14.sp)
             }
         }
-        Spacer(modifier = Modifier.width(12.dp))
-        Text("发布", color = Color.White, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -232,22 +207,23 @@ fun HomeChannelTabs(
                 if (selectedIndex < tabPositions.size) {
                     TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedIndex]),
-                        color = MaterialTheme.colorScheme.primary
+                        color = ToutiaoRed
                     )
                 }
             },
             modifier = Modifier.weight(1f)
         ) {
             channels.forEachIndexed { index, channel ->
+                val isSelected = selectedIndex == index
                 Tab(
-                    selected = selectedIndex == index,
+                    selected = isSelected,
                     onClick = { onTabSelected(index) },
                     text = {
                         Text(
                             text = channel.name,
-                            fontSize = if (selectedIndex == index) 17.sp else 16.sp,
-                            fontWeight = if (selectedIndex == index) FontWeight.Bold else FontWeight.Normal,
-                            color = if (selectedIndex == index) MaterialTheme.colorScheme.primary else Color.Black
+                            fontSize = if (isSelected) 18.sp else 16.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected) ToutiaoRed else Color.Black
                         )
                     }
                 )
@@ -268,18 +244,6 @@ fun HomeChannelTabs(
 }
 
 @Composable
-fun LoadingItem() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(strokeWidth = 2.dp, color = Color.Gray)
-    }
-}
-
-@Composable
 fun ErrorItem(msg: String, onRetry: () -> Unit) {
     Box(
         modifier = Modifier
@@ -289,5 +253,17 @@ fun ErrorItem(msg: String, onRetry: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         Text(msg, color = Color.Red)
+    }
+}
+
+@Composable
+fun LoadingItem() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(strokeWidth = 2.dp, color = Color.Gray)
     }
 }

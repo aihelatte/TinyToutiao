@@ -12,7 +12,6 @@ class ChannelRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("channel_prefs", Context.MODE_PRIVATE)
     private val KEY_MY_CHANNELS = "my_channel_codes"
 
-    // 🔥 修改 1: 默认列表包含 "hot"
     private val DEFAULT_CHANNELS = listOf("general", "hot", "technology", "sports", "entertainment")
 
     private val _myChannels = MutableStateFlow<List<Channel>>(emptyList())
@@ -37,7 +36,6 @@ class ChannelRepository(context: Context) {
         val all = Channel.ALL_CHANNELS.associateBy { it.code }
         val my = myCodes.mapNotNull { all[it] }.toMutableList()
 
-        // --- 🔥 修改 2: 强制修复顺序逻辑 ---
 
         // 1. 确保 "推荐" 存在且在第 0 位
         val general = Channel("general", "推荐")
@@ -70,7 +68,6 @@ class ChannelRepository(context: Context) {
     }
 
     fun removeChannel(channel: Channel) {
-        // 🔥 修改 3: 保护 "hot" 不被删除
         if (channel.code == "general" || channel.code == "hot") return
 
         val currentMy = _myChannels.value.toMutableList()
