@@ -18,6 +18,14 @@
 
 项目不仅实现了新闻流的无限加载与离线缓存，还重点加入了 **骨架屏加载**、**Lottie 动效**、**异构列表** 等UI细节。
 
+## 📸 预览 (Screenshots)
+
+| 🚀 开屏 | 📰 首页 & 异构列表 | 🔥 热榜 | 📺 频道 |
+|:---:|:---:|:---:|:---:|
+| <img src="https://pic1.imgdb.cn/item/6937b7eef9354404e33b429f.jpg" width="220"/> | <img src="https://pic1.imgdb.cn/item/6937b7fcf9354404e33b42b4.jpg" width="220"/> | <img src="https://pic1.imgdb.cn/item/6937b843f9354404e33b42cf.jpg" width="220"/> | <img src="https://pic1.imgdb.cn/item/6937b92000233646958ccc38.jpg" width="220"/> |
+| **🛠 频道管理** | **📄 新闻详情页** | **👤 个人中心** | **❤️ 浏览历史 & 收藏** |
+| <img src="https://pic1.imgdb.cn/item/6937b857f9354404e33b42ee.jpg" width="220"/> | <img src="https://pic1.imgdb.cn/item/6937b879f9354404e33b431a.jpg" width="220"/> | <img src="https://pic1.imgdb.cn/item/6937b8d400233646958ccc2a.jpg" width="220"/> | <img src="https://pic1.imgdb.cn/item/6937b8e700233646958ccc32.jpg" width="220"/> |
+
 ## 🛠 技术栈 (Tech Stack)
 
 本项目采用全 Kotlin 开发，严格遵循 **Clean Architecture** 分层思想：
